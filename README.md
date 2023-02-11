@@ -1,1 +1,1 @@
-# deprem-bilgi
+<p>Herkese Merhaba<p>
