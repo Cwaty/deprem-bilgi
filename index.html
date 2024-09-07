@@ -3,39 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tamercan</title>
+    <title>Deprem Bilgisi</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow-x: hidden;
         }
         .container {
-            margin-top: 20px;
+            width: 90%;
+            max-width: 1200px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 20px;
+            overflow-x: auto; 
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4A90E2;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #357ABD;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
         th, td {
-            padding: 8px;
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
+            word-wrap: break-word; 
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #4A90E2;
+            color: #ffffff;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .no-data {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+        .index {
+            width: 5%;
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Son 20 Deprem Bilgisi</h1>
     <div class="container">
-        <table>
+        <h1>Son 20 Deprem Bilgisi</h1>
+        <table id="recent-deprems">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Tarih</th>
                     <th>Saat</th>
                     <th>Enlem</th>
@@ -45,51 +94,108 @@
                     <th>Yer</th>
                 </tr>
             </thead>
-            <tbody id="info">
+            <tbody id="recent-info">
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="container">
+        <h1>Şehir Bazında Son 20 Deprem Bilgisi</h1>
+        <input type="text" id="city" placeholder="Şehir adı girin">
+        <button id="search">Ara</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Tarih</th>
+                    <th>Saat</th>
+                    <th>Enlem</th>
+                    <th>Boylam</th>
+                    <th>Derinlik (km)</th>
+                    <th>Şiddet (ML)</th>
+                    <th>Yer</th>
+                </tr>
+            </thead>
+            <tbody id="city-info">
             </tbody>
         </table>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            fetch('https://hasanadiguzel.com.tr/api/sondepremler') 
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const tableBody = document.getElementById('info');
-                    tableBody.innerHTML = ''; 
-                    const depremListesi = data.data.slice(0, 20); 
-                    depremListesi.forEach(deprem => {
-                        let tarih = deprem.tarih;
-                        let saat = deprem.saat;
-                        let enlem = deprem.enlem_n;
-                        let boylam = deprem.boylam_e;
-                        let derinlik = deprem.derinlik_km;
-                        let siddet = deprem.ml;
-                        let yer = deprem.yer;
-
-                        let row = `<tr>
-                            <td>${tarih}</td>
-                            <td>${saat}</td>
-                            <td>${enlem}</td>
-                            <td>${boylam}</td>
-                            <td>${derinlik}</td>
-                            <td>${siddet}</td>
-                            <td>${yer}</td>
-                        </tr>`;
-                        
-                        tableBody.innerHTML += row;
-                    });
-                })
+        function fetchDepremBilgileri(url, callback) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => callback(data))
                 .catch(error => {
                     console.error('Hata:', error);
-                    document.getElementById('info').innerHTML = '<tr><td colspan="7">Deprem bilgisi alınamadı.</td></tr>';
+                    return [];
                 });
+        }
+
+        function showRecentDeprems(data) {
+            const tableBody = document.getElementById('recent-info');
+            tableBody.innerHTML = ''; 
+
+            const depremListesi = data.data.slice(0, 20);
+            if (depremListesi.length > 0) {
+                depremListesi.forEach((deprem, index) => {
+                    let row = `<tr>
+                        <td class="index">${index + 1}</td>
+                        <td>${deprem.tarih}</td>
+                        <td>${deprem.saat}</td>
+                        <td>${deprem.enlem_n}</td>
+                        <td>${deprem.boylam_e}</td>
+                        <td>${deprem.derinlik_km}</td>
+                        <td>${deprem.ml}</td>
+                        <td>${deprem.yer}</td>
+                    </tr>`;
+                    
+                    tableBody.innerHTML += row;
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="8" class="no-data">Deprem bilgisi bulunamadı.</td></tr>';
+            }
+        }
+
+        function showCityDeprems(data, city) {
+            const tableBody = document.getElementById('city-info');
+            tableBody.innerHTML = ''; 
+
+            const depremListesi = data.data.filter(deprem => deprem.yer.toLowerCase().includes(city.toLowerCase())).slice(0, 20);
+            if (depremListesi.length > 0) {
+                depremListesi.forEach((deprem, index) => {
+                    let row = `<tr>
+                        <td class="index">${index + 1}</td>
+                        <td>${deprem.tarih}</td>
+                        <td>${deprem.saat}</td>
+                        <td>${deprem.enlem_n}</td>
+                        <td>${deprem.boylam_e}</td>
+                        <td>${deprem.derinlik_km}</td>
+                        <td>${deprem.ml}</td>
+                        <td>${deprem.yer}</td>
+                    </tr>`;
+                    
+                    tableBody.innerHTML += row;
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="8" class="no-data">Belirtilen şehirde deprem bilgisi bulunamadı.</td></tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const recentDepremUrl = 'https://hasanadiguzel.com.tr/api/sondepremler';
+            fetchDepremBilgileri(recentDepremUrl, showRecentDeprems);
+        });
+
+        document.getElementById('search').addEventListener('click', () => {
+            const city = document.getElementById('city').value.trim();
+            if (city) {
+                const cityDepremUrl = 'https://hasanadiguzel.com.tr/api/sondepremler';
+                fetchDepremBilgileri(cityDepremUrl, data => showCityDeprems(data, city));
+            } else {
+                document.getElementById('city-info').innerHTML = '<tr><td colspan="8" class="no-data">Lütfen bir şehir adı girin.</td></tr>';
+            }
         });
     </script>
 </body>
