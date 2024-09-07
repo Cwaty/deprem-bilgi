@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamercan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Son 20 Deprem Bilgisi</h1>
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Saat</th>
+                    <th>Enlem</th>
+                    <th>Boylam</th>
+                    <th>Derinlik (km)</th>
+                    <th>Şiddet (ML)</th>
+                    <th>Yer</th>
+                </tr>
+            </thead>
+            <tbody id="info">
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('https://hasanadiguzel.com.tr/api/sondepremler') 
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tableBody = document.getElementById('info');
+                    tableBody.innerHTML = ''; 
+                    const depremListesi = data.data.slice(0, 20); 
+                    depremListesi.forEach(deprem => {
+                        let tarih = deprem.tarih;
+                        let saat = deprem.saat;
+                        let enlem = deprem.enlem_n;
+                        let boylam = deprem.boylam_e;
+                        let derinlik = deprem.derinlik_km;
+                        let siddet = deprem.ml;
+                        let yer = deprem.yer;
+
+                        let row = `<tr>
+                            <td>${tarih}</td>
+                            <td>${saat}</td>
+                            <td>${enlem}</td>
+                            <td>${boylam}</td>
+                            <td>${derinlik}</td>
+                            <td>${siddet}</td>
+                            <td>${yer}</td>
+                        </tr>`;
+                        
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    document.getElementById('info').innerHTML = '<tr><td colspan="7">Deprem bilgisi alınamadı.</td></tr>';
+                });
+        });
+    </script>
+</body>
+</html>
